@@ -1,0 +1,99 @@
+# NutriMind – .gitignore
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+.env
+*.env.local
+
+# ── AI Model Weights (large binary files) ─────────────────────────────────────
+ai_models/weights/
+*.pt
+*.pth
+*.pkl
+*.bin
+*.onnx
+*.tflite
+
+# ── Datasets (very large) ─────────────────────────────────────────────────────
+datasets/food-101/
+datasets/UECFood256/
+datasets/nutrition5k/
+datasets/recipe1M/
+datasets/indian_fcd/*.csv
+*.zip
+*.tar.gz
+*.tar.bz2
+
+# ── Uploads ───────────────────────────────────────────────────────────────────
+uploads/
+*.jpg
+*.jpeg
+*.png
+*.webp
+*.heic
+
+# ── Node.js / Next.js ─────────────────────────────────────────────────────────
+node_modules/
+.next/
+out/
+.turbo/
+web/.env.local
+web/.env.production.local
+
+# ── Flutter / Dart ────────────────────────────────────────────────────────────
+mobile/.dart_tool/
+mobile/.packages
+mobile/build/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/pubspec.lock
+*.iml
+
+# ── Docker ────────────────────────────────────────────────────────────────────
+.docker/
+
+# ── Database ──────────────────────────────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+postgres_data/
+redis_data/
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── IDE / Editor ──────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── Testing ───────────────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+*.coveragerc
+
+# ── Certificates ──────────────────────────────────────────────────────────────
+nginx/ssl/*.pem
+nginx/ssl/*.crt
+nginx/ssl/*.key
+
+# ── Migrations (keep env.py, ignore auto-generated) ──────────────────────────
+backend/migrations/versions/
