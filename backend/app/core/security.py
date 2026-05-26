@@ -5,23 +5,18 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from uuid import UUID
 
+import bcrypt as _bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from app.config import settings
 
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def hash_password(password: str) -> str:
-    """Hash a plain text password."""
-    return pwd_context.hash(password)
+    return _bcrypt.hashpw(password.encode()[:72], _bcrypt.gensalt(rounds=12)).decode()
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    """Verify a password against its hash."""
-    return pwd_context.verify(plain, hashed)
+    return _bcrypt.checkpw(plain.encode()[:72], hashed.encode())
 
 
 def create_access_token(user_id: UUID, extra_claims: dict = None) -> str:

@@ -16,7 +16,7 @@ ultralytics==8.3.52
 
 # ── SAM2 (Segment Anything Model 2) ──────────────────────────────────────────
 # Install from GitHub: pip install git+https://github.com/facebookresearch/sam2.git
-sam2==1.0.0
+sam2==1.1.0
 
 # ── EfficientNet ──────────────────────────────────────────────────────────────
 timm==1.0.12

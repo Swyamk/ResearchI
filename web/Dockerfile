@@ -1,3 +1,14 @@
+# ── Stage 0: Development ──────────────────────────────────────────────────────
+FROM node:22-alpine AS development
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm install
+COPY . .
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=development
+EXPOSE 3000
+CMD ["npm", "run", "dev"]
+
 # ── Stage 1: Dependencies ─────────────────────────────────────────────────────
 FROM node:22-alpine AS deps
 WORKDIR /app

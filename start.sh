@@ -15,9 +15,8 @@ log_warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_err()   { echo -e "${RED}[ERR]${NC} $1"; }
 
 check_deps() {
-    for dep in docker docker-compose; do
-        command -v "$dep" &>/dev/null || { log_err "Missing: $dep"; exit 1; }
-    done
+    command -v docker &>/dev/null || { log_err "Missing: docker"; exit 1; }
+    docker compose version &>/dev/null || { log_err "Missing: docker compose plugin"; exit 1; }
 }
 
 check_env() {
@@ -35,7 +34,7 @@ check_env() {
 
 start_dev() {
     log_info "Starting NutriMind in DEVELOPMENT mode..."
-    docker-compose -f docker-compose.yml up -d --build
+    docker compose -f docker-compose.yml up -d --build
     log_ok "All services starting..."
     echo ""
     echo "  🌐 Web App:    http://localhost:3000"
@@ -44,12 +43,12 @@ start_dev() {
     echo "  📊 Grafana:    http://localhost:3001 (admin/admin)"
     echo ""
     log_info "Tailing logs (Ctrl+C to stop)..."
-    docker-compose logs -f --tail=50
+    docker compose logs -f --tail=50
 }
 
 start_prod() {
     log_info "Starting NutriMind in PRODUCTION mode..."
-    docker-compose -f docker-compose.prod.yml up -d --build
+    docker compose -f docker-compose.prod.yml up -d --build
     log_ok "All services started!"
     echo ""
     echo "  🌐 Web App:    https://nutrimind.app"
@@ -59,16 +58,16 @@ start_prod() {
 
 stop() {
     log_info "Stopping all services..."
-    docker-compose down
+    docker compose down
     log_ok "Done."
 }
 
 status() {
-    docker-compose ps
+    docker compose ps
 }
 
 logs() {
-    docker-compose logs -f "${@:2}"
+    docker compose logs -f "${@:2}"
 }
 
 check_deps

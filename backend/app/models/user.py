@@ -86,8 +86,8 @@ class User(Base):
     meals: Mapped[List["Meal"]] = relationship(
         "Meal", back_populates="user", cascade="all, delete-orphan"
     )
-    analytics: Mapped[List["NutritionAnalytics"]] = relationship(
-        "NutritionAnalytics", back_populates="user", cascade="all, delete-orphan"
+    analytics: Mapped[List["DailyNutritionSnapshot"]] = relationship(
+        "DailyNutritionSnapshot", back_populates="user", cascade="all, delete-orphan"
     )
     ai_conversations: Mapped[List["AIConversation"]] = relationship(
         "AIConversation", back_populates="user", cascade="all, delete-orphan"

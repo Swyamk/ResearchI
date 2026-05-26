@@ -39,9 +39,9 @@ export default function LandingPage() {
           <div className="hidden md:flex items-center gap-8 text-sm text-gray-400">
             <Link href="#features" className="hover:text-white transition-colors">Features</Link>
             <Link href="#stats" className="hover:text-white transition-colors">Stats</Link>
-            <Link href="/auth/login" className="hover:text-white transition-colors">Login</Link>
+            <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
           </div>
-          <Link href="/auth/register"
+          <Link href="/dashboard"
             className="px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-white rounded-xl text-sm font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-emerald-500/25">
             Get Started
           </Link>
@@ -66,7 +66,7 @@ export default function LandingPage() {
             calculates complete nutrition, and your Gemini AI coach gives personalized advice — all in seconds.
           </p>
           <div className="flex items-center justify-center gap-4 flex-wrap">
-            <Link href="/auth/register"
+            <Link href="/dashboard"
               className="flex items-center gap-2 px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-white rounded-2xl font-semibold text-lg transition-all duration-200 hover:shadow-2xl hover:shadow-emerald-500/30 hover:scale-105">
               Start Free <ArrowRight size={20} />
             </Link>
@@ -120,7 +120,7 @@ export default function LandingPage() {
           <div className="absolute inset-0 bg-nutri-gradient opacity-10 rounded-2xl" />
           <h2 className="text-4xl font-display font-bold mb-4 relative z-10">Ready to Transform Your Nutrition?</h2>
           <p className="text-gray-400 mb-8 relative z-10">Join thousands tracking smarter with NutriMind AI</p>
-          <Link href="/auth/register"
+          <Link href="/dashboard"
             className="relative z-10 inline-flex items-center gap-2 px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-white rounded-2xl font-semibold text-lg transition-all hover:scale-105 hover:shadow-2xl hover:shadow-emerald-500/30">
             Start Your Journey <ArrowRight size={20} />
           </Link>
