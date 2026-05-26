@@ -13,6 +13,71 @@ from app.redis_client import redis_client
 
 USDA_CACHE_TTL = 86400  # 24 hours
 
+# Per-100g nutrition for common foods — used when all external APIs fail
+_BUILTIN_NUTRITION: Dict[str, dict] = {
+    "apple_pie":           {"calories": 237, "protein_g": 2.0, "carbs_g": 34.0, "fat_g": 11.0, "fiber_g": 1.5, "sugar_g": 16.0, "sodium_mg": 193},
+    "baklava":             {"calories": 428, "protein_g": 5.6, "carbs_g": 52.0, "fat_g": 22.0, "fiber_g": 1.8, "sugar_g": 30.0, "sodium_mg": 170},
+    "banana":              {"calories": 89,  "protein_g": 1.1, "carbs_g": 23.0, "fat_g": 0.3,  "fiber_g": 2.6, "sugar_g": 12.0, "sodium_mg": 1},
+    "biryani":             {"calories": 200, "protein_g": 8.0, "carbs_g": 27.0, "fat_g": 6.0,  "fiber_g": 1.5, "sugar_g": 1.0,  "sodium_mg": 420},
+    "blueberries":         {"calories": 57,  "protein_g": 0.7, "carbs_g": 14.5, "fat_g": 0.3,  "fiber_g": 2.4, "sugar_g": 10.0, "sodium_mg": 1},
+    "bread":               {"calories": 265, "protein_g": 9.0, "carbs_g": 49.0, "fat_g": 3.2,  "fiber_g": 2.7, "sugar_g": 5.0,  "sodium_mg": 491},
+    "butter":              {"calories": 717, "protein_g": 0.9, "carbs_g": 0.1,  "fat_g": 81.0, "fiber_g": 0.0, "sugar_g": 0.1,  "sodium_mg": 643},
+    "caesar_salad":        {"calories": 158, "protein_g": 4.0, "carbs_g": 8.0,  "fat_g": 13.0, "fiber_g": 1.5, "sugar_g": 2.0,  "sodium_mg": 310},
+    "carrot_cake":         {"calories": 415, "protein_g": 4.5, "carbs_g": 52.0, "fat_g": 21.0, "fiber_g": 1.5, "sugar_g": 35.0, "sodium_mg": 340},
+    "ceviche":             {"calories": 130, "protein_g": 18.0,"carbs_g": 6.0,  "fat_g": 4.0,  "fiber_g": 1.0, "sugar_g": 2.0,  "sodium_mg": 500},
+    "chapati":             {"calories": 297, "protein_g": 9.0, "carbs_g": 55.0, "fat_g": 5.0,  "fiber_g": 4.0, "sugar_g": 1.0,  "sodium_mg": 390},
+    "cheesecake":          {"calories": 321, "protein_g": 5.5, "carbs_g": 25.0, "fat_g": 22.0, "fiber_g": 0.4, "sugar_g": 18.0, "sodium_mg": 260},
+    "chicken_curry":       {"calories": 150, "protein_g": 12.0,"carbs_g": 8.0,  "fat_g": 8.0,  "fiber_g": 1.5, "sugar_g": 3.0,  "sodium_mg": 450},
+    "chicken_wings":       {"calories": 290, "protein_g": 25.0,"carbs_g": 0.0,  "fat_g": 20.0, "fiber_g": 0.0, "sugar_g": 0.0,  "sodium_mg": 370},
+    "chocolate_cake":      {"calories": 371, "protein_g": 5.0, "carbs_g": 50.0, "fat_g": 18.0, "fiber_g": 2.0, "sugar_g": 35.0, "sodium_mg": 299},
+    "chocolate_mousse":    {"calories": 280, "protein_g": 5.0, "carbs_g": 24.0, "fat_g": 18.0, "fiber_g": 1.5, "sugar_g": 20.0, "sodium_mg": 80},
+    "churros":             {"calories": 402, "protein_g": 5.0, "carbs_g": 45.0, "fat_g": 22.0, "fiber_g": 1.5, "sugar_g": 14.0, "sodium_mg": 390},
+    "cup_cakes":           {"calories": 389, "protein_g": 4.0, "carbs_g": 56.0, "fat_g": 17.0, "fiber_g": 0.8, "sugar_g": 38.0, "sodium_mg": 330},
+    "dal":                 {"calories": 116, "protein_g": 8.0, "carbs_g": 18.0, "fat_g": 1.5,  "fiber_g": 4.5, "sugar_g": 2.0,  "sodium_mg": 240},
+    "dal_makhani":         {"calories": 145, "protein_g": 7.0, "carbs_g": 17.0, "fat_g": 5.0,  "fiber_g": 5.0, "sugar_g": 2.5,  "sodium_mg": 310},
+    "donuts":              {"calories": 452, "protein_g": 5.0, "carbs_g": 51.0, "fat_g": 25.0, "fiber_g": 1.2, "sugar_g": 22.0, "sodium_mg": 380},
+    "dosa":                {"calories": 133, "protein_g": 3.5, "carbs_g": 25.0, "fat_g": 2.5,  "fiber_g": 1.0, "sugar_g": 1.0,  "sodium_mg": 290},
+    "eggs_benedict":       {"calories": 286, "protein_g": 14.0,"carbs_g": 18.0, "fat_g": 18.0, "fiber_g": 0.8, "sugar_g": 3.0,  "sodium_mg": 760},
+    "falafel":             {"calories": 333, "protein_g": 13.0,"carbs_g": 32.0, "fat_g": 18.0, "fiber_g": 5.0, "sugar_g": 3.0,  "sodium_mg": 585},
+    "french_fries":        {"calories": 312, "protein_g": 3.4, "carbs_g": 41.0, "fat_g": 15.0, "fiber_g": 3.8, "sugar_g": 0.3,  "sodium_mg": 210},
+    "french_toast":        {"calories": 229, "protein_g": 7.5, "carbs_g": 26.0, "fat_g": 10.0, "fiber_g": 1.0, "sugar_g": 7.0,  "sodium_mg": 330},
+    "fried_rice":          {"calories": 163, "protein_g": 4.0, "carbs_g": 28.0, "fat_g": 4.0,  "fiber_g": 1.0, "sugar_g": 1.5,  "sodium_mg": 450},
+    "gulab_jamun":         {"calories": 387, "protein_g": 5.5, "carbs_g": 57.0, "fat_g": 15.0, "fiber_g": 0.5, "sugar_g": 42.0, "sodium_mg": 190},
+    "hamburger":           {"calories": 295, "protein_g": 17.0,"carbs_g": 24.0, "fat_g": 14.0, "fiber_g": 1.5, "sugar_g": 5.0,  "sodium_mg": 480},
+    "hot_dog":             {"calories": 290, "protein_g": 12.0,"carbs_g": 23.0, "fat_g": 16.0, "fiber_g": 1.0, "sugar_g": 5.0,  "sodium_mg": 700},
+    "ice_cream":           {"calories": 207, "protein_g": 3.5, "carbs_g": 24.0, "fat_g": 11.0, "fiber_g": 0.5, "sugar_g": 21.0, "sodium_mg": 80},
+    "idli":                {"calories": 58,  "protein_g": 2.0, "carbs_g": 12.0, "fat_g": 0.3,  "fiber_g": 0.5, "sugar_g": 0.5,  "sodium_mg": 240},
+    "khichdi":             {"calories": 118, "protein_g": 5.0, "carbs_g": 21.0, "fat_g": 2.0,  "fiber_g": 2.0, "sugar_g": 1.0,  "sodium_mg": 310},
+    "lasagna":             {"calories": 166, "protein_g": 10.0,"carbs_g": 17.0, "fat_g": 6.0,  "fiber_g": 1.5, "sugar_g": 4.0,  "sodium_mg": 390},
+    "macaroni_and_cheese": {"calories": 164, "protein_g": 7.0, "carbs_g": 22.0, "fat_g": 5.0,  "fiber_g": 1.0, "sugar_g": 4.0,  "sodium_mg": 440},
+    "maple_syrup":         {"calories": 260, "protein_g": 0.0, "carbs_g": 67.0, "fat_g": 0.1,  "fiber_g": 0.0, "sugar_g": 60.0, "sodium_mg": 9},
+    "miso_soup":           {"calories": 40,  "protein_g": 3.0, "carbs_g": 5.0,  "fat_g": 1.0,  "fiber_g": 1.0, "sugar_g": 1.5,  "sodium_mg": 630},
+    "nachos":              {"calories": 346, "protein_g": 7.0, "carbs_g": 36.0, "fat_g": 19.0, "fiber_g": 3.5, "sugar_g": 1.5,  "sodium_mg": 560},
+    "omelette":            {"calories": 154, "protein_g": 11.0,"carbs_g": 1.0,  "fat_g": 12.0, "fiber_g": 0.0, "sugar_g": 1.0,  "sodium_mg": 340},
+    "pad_thai":            {"calories": 193, "protein_g": 10.0,"carbs_g": 25.0, "fat_g": 6.0,  "fiber_g": 1.5, "sugar_g": 5.0,  "sodium_mg": 430},
+    "pakora":              {"calories": 265, "protein_g": 7.0, "carbs_g": 28.0, "fat_g": 14.0, "fiber_g": 3.0, "sugar_g": 2.0,  "sodium_mg": 370},
+    "palak_paneer":        {"calories": 183, "protein_g": 9.0, "carbs_g": 8.0,  "fat_g": 13.0, "fiber_g": 2.5, "sugar_g": 2.0,  "sodium_mg": 400},
+    "pancakes":            {"calories": 227, "protein_g": 6.0, "carbs_g": 35.0, "fat_g": 7.0,  "fiber_g": 1.2, "sugar_g": 8.0,  "sodium_mg": 480},
+    "pav_bhaji":           {"calories": 170, "protein_g": 5.0, "carbs_g": 28.0, "fat_g": 5.0,  "fiber_g": 3.5, "sugar_g": 5.0,  "sodium_mg": 460},
+    "pizza":               {"calories": 266, "protein_g": 11.0,"carbs_g": 33.0, "fat_g": 10.0, "fiber_g": 2.3, "sugar_g": 3.6,  "sodium_mg": 598},
+    "powdered_sugar":      {"calories": 389, "protein_g": 0.0, "carbs_g": 100.0,"fat_g": 0.0,  "fiber_g": 0.0, "sugar_g": 97.0, "sodium_mg": 2},
+    "pulao":               {"calories": 155, "protein_g": 3.5, "carbs_g": 28.0, "fat_g": 3.5,  "fiber_g": 1.5, "sugar_g": 1.0,  "sodium_mg": 320},
+    "ramen":               {"calories": 188, "protein_g": 8.0, "carbs_g": 26.0, "fat_g": 5.0,  "fiber_g": 1.0, "sugar_g": 2.0,  "sodium_mg": 860},
+    "red_velvet_cake":     {"calories": 369, "protein_g": 4.5, "carbs_g": 48.0, "fat_g": 18.0, "fiber_g": 1.0, "sugar_g": 33.0, "sodium_mg": 330},
+    "rice":                {"calories": 130, "protein_g": 2.7, "carbs_g": 28.0, "fat_g": 0.3,  "fiber_g": 0.4, "sugar_g": 0.0,  "sodium_mg": 1},
+    "risotto":             {"calories": 166, "protein_g": 5.0, "carbs_g": 27.0, "fat_g": 4.5,  "fiber_g": 1.0, "sugar_g": 1.5,  "sodium_mg": 390},
+    "samosa":              {"calories": 308, "protein_g": 6.0, "carbs_g": 32.0, "fat_g": 18.0, "fiber_g": 3.0, "sugar_g": 2.0,  "sodium_mg": 420},
+    "spaghetti_bolognese": {"calories": 187, "protein_g": 11.0,"carbs_g": 22.0, "fat_g": 6.0,  "fiber_g": 2.0, "sugar_g": 4.0,  "sodium_mg": 350},
+    "spring_rolls":        {"calories": 165, "protein_g": 4.5, "carbs_g": 22.0, "fat_g": 7.0,  "fiber_g": 2.0, "sugar_g": 2.0,  "sodium_mg": 310},
+    "steak":               {"calories": 271, "protein_g": 26.0,"carbs_g": 0.0,  "fat_g": 18.0, "fiber_g": 0.0, "sugar_g": 0.0,  "sodium_mg": 59},
+    "sushi":               {"calories": 150, "protein_g": 6.0, "carbs_g": 25.0, "fat_g": 2.5,  "fiber_g": 1.0, "sugar_g": 3.0,  "sodium_mg": 420},
+    "syrup":               {"calories": 260, "protein_g": 0.0, "carbs_g": 67.0, "fat_g": 0.0,  "fiber_g": 0.0, "sugar_g": 55.0, "sodium_mg": 10},
+    "tacos":               {"calories": 226, "protein_g": 10.0,"carbs_g": 23.0, "fat_g": 11.0, "fiber_g": 3.0, "sugar_g": 2.0,  "sodium_mg": 480},
+    "tiramisu":            {"calories": 240, "protein_g": 5.0, "carbs_g": 26.0, "fat_g": 13.0, "fiber_g": 0.5, "sugar_g": 18.0, "sodium_mg": 130},
+    "upma":                {"calories": 148, "protein_g": 4.0, "carbs_g": 22.0, "fat_g": 5.0,  "fiber_g": 2.0, "sugar_g": 1.5,  "sodium_mg": 340},
+    "waffles":             {"calories": 291, "protein_g": 8.0, "carbs_g": 37.0, "fat_g": 13.0, "fiber_g": 1.5, "sugar_g": 10.0, "sodium_mg": 490},
+}
+
 
 class NutritionService:
     """
@@ -221,13 +286,29 @@ class NutritionService:
 
         return results
 
+    # ── Built-in Fallback ──────────────────────────────────────────────────────
+    def search_builtin(self, food_name: str) -> Optional[dict]:
+        """Exact or fuzzy match against the built-in nutrition table."""
+        key = food_name.lower().strip().replace(" ", "_")
+        if key in _BUILTIN_NUTRITION:
+            return {"source": "builtin", "name": key, **_BUILTIN_NUTRITION[key]}
+        # Fuzzy: check if any builtin key is a substring of the query or vice versa
+        for builtin_key, data in _BUILTIN_NUTRITION.items():
+            if builtin_key in key or key in builtin_key:
+                return {"source": "builtin", "name": builtin_key, **data}
+        return None
+
     # ── Unified Search ─────────────────────────────────────────────────────────
     async def search_all(self, food_name: str) -> dict:
         """Search all nutrition databases and return best match."""
-        # Priority: Indian FCD for Indian foods → USDA → OpenFoodFacts
-        indian_results = self.search_indian_fcd(food_name)
-        usda_results = await self.search_usda(food_name)
-        off_results = await self.search_openfoodfacts(food_name)
+        # Clean name: underscores → spaces for external API queries
+        clean_name = food_name.replace("_", " ").strip()
+
+        # Priority: Indian FCD → USDA → OpenFoodFacts → built-in table
+        indian_results = self.search_indian_fcd(clean_name)
+        usda_results = await self.search_usda(clean_name)
+        off_results = await self.search_openfoodfacts(clean_name)
+        builtin_match = self.search_builtin(food_name)
 
         return {
             "query": food_name,
@@ -237,7 +318,8 @@ class NutritionService:
             "best_match": (
                 indian_results[0] if indian_results else
                 usda_results[0] if usda_results else
-                off_results[0] if off_results else None
+                off_results[0] if off_results else
+                builtin_match
             ),
         }
 
