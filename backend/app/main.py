@@ -15,9 +15,35 @@ import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 
 from app.config import settings
-from app.database import create_db_tables
+from app.database import create_db_tables, engine
 from app.redis_client import redis_client
 from app.api.v1 import auth, users, meals, nutrition, analytics, recommendations, ai_coach
+
+GUEST_USER_ID = "d74c3017-3383-48fd-bc25-094475534748"
+
+
+async def seed_guest_user():
+    """Insert the guest user on first boot if it doesn't exist yet."""
+    from sqlalchemy import text
+    from sqlalchemy.ext.asyncio import AsyncSession
+    from sqlalchemy.orm import sessionmaker
+
+    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session() as session:
+        result = await session.execute(
+            text("SELECT id FROM users WHERE id = :id"),
+            {"id": GUEST_USER_ID},
+        )
+        if result.first() is None:
+            await session.execute(
+                text("""
+                    INSERT INTO users (id, email, full_name, auth_provider, is_active, is_verified)
+                    VALUES (:id, :email, :name, 'email', true, true)
+                """),
+                {"id": GUEST_USER_ID, "email": "guest@nutrimind.app", "name": "Guest User"},
+            )
+            await session.commit()
+            logger.info("✅ Guest user seeded")
 
 # Configure structured logging
 structlog.configure(
@@ -49,6 +75,9 @@ async def lifespan(app: FastAPI):
     # Initialize database tables
     await create_db_tables()
     logger.info("✅ Database initialized")
+
+    # Seed guest user so the default token always works
+    await seed_guest_user()
 
     # Connect Redis
     await redis_client.connect()
